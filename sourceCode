@@ -1,0 +1,217 @@
+//This program will read students' names and their five test scores from a data file, calculate the
+//average of the five test score and determine their letter grade based on the average, and then outputs
+//students' names, their average test score and the relevant grade (A, B, C, D, or F) according to the
+//alphabetical order of their last names (or if their last name are the same, sort according to their first
+//names). The program will also find and print the average test score of the class, and highest test score and
+//the name(s) of the students having the highest test score.
+
+//Casey Smith
+//April 20, 2015
+
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <cmath>
+using namespace std;
+
+struct studentGrade {
+    string first;
+    string last;
+    int score[5];
+    double average;
+    string grade;
+};
+
+int total(ifstream&, int&);
+void studentInfo(studentGrade *, ifstream&, int);
+void avg(studentGrade*, int);
+void findGrade(studentGrade*, int);
+void sort(studentGrade*, int);
+void findHighest(studentGrade*, int, int&, int&);
+void display(studentGrade*, ifstream&, int, ostream&);
+void displayHighest(studentGrade*, int, int, int, ostream&);
+
+const string FILE_PATH = "/Users/Casey/Documents/";
+
+int main() {
+
+    ifstream infile;
+    ofstream outfile;
+
+    infile.open(FILE_PATH+"grade.dat");
+    outfile.open(FILE_PATH+"prog3.out");
+
+    int arrSize=0, highest, count;
+
+    studentGrade * array;
+    arrSize=total(infile, arrSize);
+    array = new studentGrade[arrSize];  //same as array[arrSize], arrSize is now the total number
+    studentInfo(array, infile, arrSize);
+    avg(array, arrSize);
+    findGrade(array, arrSize);
+    sort(array, arrSize);
+    findHighest(array, arrSize, highest, count);
+    display(array, infile, arrSize, cout);
+    display(array, infile, arrSize, outfile);
+    displayHighest(array, arrSize, highest, count, cout);
+    displayHighest(array, arrSize, highest, count, outfile);
+
+    infile.close();
+    outfile.close();
+    return 0;
+}
+
+
+//This function will read through the array and create a total array size.
+int total(ifstream& infile, int& arrSize){
+    arrSize=-1;
+    while(infile.good()){
+        char tempArr[2048];
+        infile.getline(tempArr, 2048);
+        arrSize++;
+    }
+    infile.ignore();
+    infile.clear();
+    infile.seekg(infile.beg);
+
+
+    return arrSize;
+}
+
+void display(studentGrade* array, ifstream &infile, int arrSize, ostream& outf){
+    outf<< "Student Grade Report" << endl << "----------------------------------------------" << endl
+        << "Student Name \t\t Average \t Grade" << endl << "----------------------------------------------" << endl;
+
+    for(int i=0; i<arrSize; i++){
+        string word=array[i].last + ", " + array[i].first;
+
+        if (array[i].average!=-1)
+        outf << left << setw(23) << word
+             << array[i].average << "\t\t\t" << setw(30) << array[i].grade << endl;
+        else
+            outf << left << setw(23) << word
+                    << " " << "\t\t\t" << setw(30) << array[i].grade << endl;
+
+    }
+
+    outf << "----------------------------------------------" << endl;
+}
+
+//This function will read the students information into the structure.
+void studentInfo(studentGrade * array, ifstream &infile, int arrSize){
+    int i = 0;
+    while(infile.good()){
+        infile >> array[i].first >> array[i].last >> array[i].score[0]
+                >> array[i].score[1] >> array[i].score[2] >> array[i].score[3]
+                >> array[i].score[4];
+        i++;
+    }
+}
+
+//This function will calcuate the student's averages among their 5 test scores
+//and will store each of the student's averages in the structure.
+void avg(studentGrade * array, int arrSize){
+    for(int i=0; i<arrSize; i++) {
+        double total = 0;
+        for (int test=0; test<5; test++) {
+            total = total + array[i].score[test];
+        }
+        array[i].average = ceil(total / 5);
+    }
+}
+
+//This function will determine the student's letter grades based on their averages
+//and will store each of the student's letter grades in the structure.
+void findGrade(studentGrade * array, int arrSize){
+
+    avg(array, arrSize);
+
+    for(int i=0; i<arrSize; i++) {
+        for (int x=0; x<5; x++){
+            if (array[i].score[x] > 100 || array[i].score[x] < 0)
+                array[i].average = -1;
+        }
+    //checks that the test score is between 100 & 0
+    //other wise it would return a -1, indicating an invalid score.
+
+
+        if(array[i].average>=90 && array[i].average <= 100) {
+            array[i].grade = 'A';
+        }
+        else if (array[i].average<90 && array[i].average >= 80){
+            array[i].grade='B';
+        }
+        else if (array[i].average<80 && array[i].average >= 70){
+            array[i].grade='C';
+        }
+        else if (array[i].average<70 && array[i].average >= 60){
+            array[i].grade='D';
+        }
+        else if (array[i].average<60 && array[i].average>=0){
+            array[i].grade='F';
+        }
+        else
+            array[i].grade="I Invalid Test Score!";
+    }
+}
+
+//selection sort function for the structure.
+ void sort (studentGrade * array, int arrSize){
+    int seek;
+    int minCount;
+    studentGrade * minValue;
+
+    for(seek=0; seek<(arrSize); seek++){
+        minCount=seek;
+        minValue=array+seek;
+
+        for(int index=seek+1; index < arrSize; index++)
+        {
+            if(array[index].last < (*minValue).last)
+            {
+                minValue=array+index;
+                minCount=index;
+            }
+            else if (strcmp (array[index].last.c_str(), (*minValue).last.c_str())==0
+                    && array[index].first < (*minValue).first){
+                minValue=array+index;
+                minCount=index;
+            }
+        }
+        studentGrade temp = array[minCount];
+        array[minCount]=array[seek];
+        array[seek]= temp;
+    }
+
+}
+
+//This function will find if there is more than one student with the highest grade (in the case there are
+//two students with the same highest grade). It will also assign particular values as the highest average.
+void findHighest(studentGrade * array, int arrSize, int& highest, int& count){
+    count=1;
+    highest=array[0].average;
+    for (int i=1; i<arrSize; i++) {
+        if(highest==array[i].average){
+            count++;
+        }
+        else if (array[i].average>highest){
+            highest=array[i].average;
+            count=1;
+        }
+    }
+
+}
+
+void displayHighest(studentGrade * array, int arrSize, int highest, int count, ostream& outf) {
+
+    outf << "The students with the highest grades are:" << endl << endl;
+
+    for (int i = 0; i < arrSize; i++){
+            if (array[i].average >= highest) {
+                string word=array[i].first + " " + array[i].last;
+                outf << left << setw(23) << word
+                        << highest << "\t\t\t" << setw(30) << array[i].grade << endl;
+        }
+    }
+
+}
